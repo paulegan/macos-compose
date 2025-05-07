@@ -127,7 +127,9 @@ def data_to_mac_dict(data):
       };
     };
     """
-    updated = object_hook(data, lambda value: f'INSERT:{value}', str)
+    escape_special_chars = lambda c: f'\\{c}' if c in '^@~#$' else c
+    escape_keys = lambda d: {escape_special_chars(k): (escape_keys(v) if type(v) is dict else v) for k, v in d.items()}
+    updated = object_hook(escape_keys(data), lambda value: f'INSERT:{value}', str)
     text = json.dumps(updated, indent=2, ensure_ascii=False)
     repl = lambda value: f'("insertText:", "{value.groups()[0]}");'
     text = re.sub('"INSERT:(.+)",*', repl, text)
