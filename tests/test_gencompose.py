@@ -7,7 +7,7 @@ from gencompose import main
 def test_special_characters():
     runner = CliRunner()
     file = Path(__file__).parent / 'test_special_chars.yaml'
-    result = runner.invoke(main, args=[str(file)])
+    result = runner.invoke(main, args=['--escape-modifier-keys', str(file)])
     print(result.output)
     assert result.exit_code == 0
     assert '"\\\\^"' in result.output

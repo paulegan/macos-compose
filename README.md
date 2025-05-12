@@ -33,6 +33,7 @@ Usage: gen-compose [OPTIONS] [MAPPINGS]...
 Options:
   --key TEXT  key to use as compose key  [default: §]
   -r, --raw   just keymap without prefix
+  -e, --escape-modifier-keys   escape keys such as ^, so they're treated as the character and not a modifier
   --help      Show this message and exit.
 ```
 

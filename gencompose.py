@@ -66,14 +66,15 @@ def object_hook(dict_, func: Callable, types: Union[Tuple[Type], Type] = dict):
 @click.argument('mappings', type=click.File(), nargs=-1)
 @click.option('--key', default='§', show_default=True, help='key to use as compose key')
 @click.option('-r', '--raw', is_flag=True, help='just keymap without prefix')
-def main(mappings, raw, key):
+@click.option('-e', '--escape-modifier-keys', is_flag=True, help='escape modifier keys such as "^"')
+def main(mappings, raw, key, escape_modifier_keys):
     """Generate macos rebind file from compose json mapping"""
     all_maps = {}
     for mapping in mappings:
         yamldata = yaml.load(mapping.read(), Loader=yaml.Loader)
         all_maps.update(**{str(k): str(v) for k, v in yamldata.items()})
     all_maps = read_paths(all_maps)
-    text = data_to_mac_dict(all_maps)
+    text = data_to_mac_dict(all_maps, escape_modifier_keys)
     if raw:
         echo(text)
     else:
@@ -114,7 +115,7 @@ def read_paths(data):
     return parsed
 
 
-def data_to_mac_dict(data):
+def data_to_mac_dict(data, escape_modifer_keys=False):
     """
     converts dictionary data to macos keymap.dict format
 
@@ -127,9 +128,11 @@ def data_to_mac_dict(data):
       };
     };
     """
-    escape_special_chars = lambda c: f'\\{c}' if c in '^@~#$' else c
-    escape_keys = lambda d: {escape_special_chars(k): (escape_keys(v) if type(v) is dict else v) for k, v in d.items()}
-    updated = object_hook(escape_keys(data), lambda value: f'INSERT:{value}', str)
+    if escape_modifer_keys:
+        escape_special_chars = lambda c: f'\\{c}' if c in '^@~#$' else c
+        escape_keys = lambda d: {escape_special_chars(k): (escape_keys(v) if type(v) is dict else v) for k, v in d.items()}
+        data = escape_keys(data)
+    updated = object_hook(data, lambda value: f'INSERT:{value}', str)
     text = json.dumps(updated, indent=2, ensure_ascii=False)
     repl = lambda value: f'("insertText:", "{value.groups()[0]}");'
     text = re.sub('"INSERT:(.+)",*', repl, text)
